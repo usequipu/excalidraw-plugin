@@ -16,11 +16,15 @@ declare global {
 }
 
 if (typeof window !== 'undefined') {
-  const pluginRoot = new URL('./', import.meta.url).href;
+  // Slice import.meta.url instead of `new URL('./', import.meta.url)` —
+  // Vite's lib build rewrites the latter into `new URL('data:...,<source>', ...)`,
+  // which makes EXCALIDRAW_ASSET_PATH a `data:` URL and throws "Invalid URL"
+  // when Excalidraw resolves font paths against it.
+  const pluginRoot = import.meta.url.replace(/[^/]*$/, '');
   window.EXCALIDRAW_ASSET_PATH = pluginRoot;
 
   if (typeof document !== 'undefined') {
-    const href = new URL('./excalidraw-plugin.css', import.meta.url).href;
+    const href = pluginRoot + 'excalidraw-plugin.css';
     const existing = document.querySelector(`link[href="${href}"]`);
     if (!existing) {
       const link = document.createElement('link');
