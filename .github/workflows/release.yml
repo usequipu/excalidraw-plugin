@@ -28,7 +28,6 @@ jobs:
         run: |
           mkdir -p release
           cp dist/index.js release/
-          cp dist/excalidraw-plugin.css release/
           cp -r dist/fonts release/
           cp manifest.json release/
           cd release && zip -r ../plugin.zip .

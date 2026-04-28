@@ -1,5 +1,6 @@
 import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
+import cssInjectedByJsPlugin from 'vite-plugin-css-injected-by-js';
 import { cp, rm } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
@@ -21,7 +22,11 @@ function copyExcalidrawFonts(): Plugin {
 }
 
 export default defineConfig({
-  plugins: [react(), copyExcalidrawFonts()],
+  // CSS is inlined into the JS bundle so it applies at module-evaluation time.
+  // A `<link>` tag would load asynchronously, and Excalidraw measures its
+  // container layout at mount; the chrome (toolbar, panels, theme) ends up
+  // rendered as default block flow if CSS hasn't applied by then.
+  plugins: [react(), cssInjectedByJsPlugin(), copyExcalidrawFonts()],
   define: {
     'process.env.NODE_ENV': JSON.stringify('production'),
     'process.browser': 'true',
