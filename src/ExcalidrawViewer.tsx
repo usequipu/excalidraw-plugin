@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { Excalidraw, serializeAsJSON } from '@excalidraw/excalidraw';
+import { Excalidraw, getSceneVersion, serializeAsJSON } from '@excalidraw/excalidraw';
 import '@excalidraw/excalidraw/index.css';
 import type { ExcalidrawElement } from '@excalidraw/excalidraw/element/types';
 import type { AppState, BinaryFiles, ExcalidrawImperativeAPI } from '@excalidraw/excalidraw/types';
@@ -20,7 +20,11 @@ const ExcalidrawViewer = ({ tab, onContentChange }: ExcalidrawViewerProps) => {
   const filePath = tab.path;
   const [, setExcalidrawAPI] = useState<ExcalidrawImperativeAPI | null>(null);
   const initialDataRef = useRef<ExcalidrawInitialData | null>(null);
-  const ignoreChangesRef = useRef<boolean>(true);
+  // Last scene version we've serialized for save. Excalidraw fires onChange for
+  // appState transients (zoom, theme rehydration, font load) too, so a flat
+  // "ignore for 800ms" window can't separate phantom changes from real edits —
+  // gate saves on getSceneVersion instead.
+  const lastSceneVersionRef = useRef<number>(-1);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const onContentChangeRef = useRef<typeof onContentChange>(onContentChange);
   onContentChangeRef.current = onContentChange;
@@ -33,13 +37,18 @@ const ExcalidrawViewer = ({ tab, onContentChange }: ExcalidrawViewerProps) => {
         appState: { ...parsed.appState, collaborators: [] },
         files: parsed.files || undefined,
       };
+      lastSceneVersionRef.current = getSceneVersion(initialDataRef.current.elements);
     } catch {
       initialDataRef.current = { elements: [], appState: {} };
+      lastSceneVersionRef.current = getSceneVersion([]);
     }
   }
 
   const handleChange = useCallback((elements: readonly ExcalidrawElement[], appState: AppState, files: BinaryFiles) => {
-    if (ignoreChangesRef.current) return;
+    const version = getSceneVersion(elements);
+    if (version === lastSceneVersionRef.current) return;
+    lastSceneVersionRef.current = version;
+
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
       const json = serializeAsJSON(elements, appState, files, 'local');
@@ -49,9 +58,7 @@ const ExcalidrawViewer = ({ tab, onContentChange }: ExcalidrawViewerProps) => {
 
   useEffect(() => {
     initialDataRef.current = null;
-    ignoreChangesRef.current = true;
-    const timer = setTimeout(() => { ignoreChangesRef.current = false; }, 800);
-    return () => clearTimeout(timer);
+    lastSceneVersionRef.current = -1;
   }, [filePath]);
 
   useEffect(() => () => { if (debounceRef.current) clearTimeout(debounceRef.current); }, []);
@@ -69,7 +76,6 @@ const ExcalidrawViewer = ({ tab, onContentChange }: ExcalidrawViewerProps) => {
         excalidrawAPI={(api: ExcalidrawImperativeAPI) => setExcalidrawAPI(api)}
         initialData={initialDataRef.current}
         onChange={handleChange}
-        theme="dark"
         UIOptions={{ canvasActions: { saveAsImage: false, export: false } }}
       />
     </div>

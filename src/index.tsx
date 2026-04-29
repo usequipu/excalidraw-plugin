@@ -1,3 +1,4 @@
+import './setAssetPath';
 import type { PluginApi } from './plugin-types';
 import ExcalidrawViewer from './ExcalidrawViewer';
 
