@@ -76,7 +76,6 @@ const ExcalidrawViewer = ({ tab, onContentChange }: ExcalidrawViewerProps) => {
         excalidrawAPI={(api: ExcalidrawImperativeAPI) => setExcalidrawAPI(api)}
         initialData={initialDataRef.current}
         onChange={handleChange}
-        theme="dark"
         UIOptions={{ canvasActions: { saveAsImage: false, export: false } }}
       />
     </div>
