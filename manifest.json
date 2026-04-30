@@ -1,7 +1,7 @@
 {
   "id": "excalidraw-plugin",
   "name": "Excalidraw Canvas",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "description": "Infinite canvas whiteboard editor for .excalidraw files using Excalidraw.",
   "entry": "index.js",
   "quipuVersion": ">=0.14.0",

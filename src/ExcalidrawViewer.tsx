@@ -64,9 +64,15 @@ const ExcalidrawViewer = ({ tab, onContentChange }: ExcalidrawViewerProps) => {
   useEffect(() => () => { if (debounceRef.current) clearTimeout(debounceRef.current); }, []);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
+    // Suppress Excalidraw's built-in Ctrl+S "save scene" dialog while still
+    // letting the host's document-level keybinding listener run `file.save`.
+    // Calling `e.stopPropagation()` here would also call the underlying
+    // nativeEvent.stopPropagation() and the host's
+    // `document.addEventListener('keydown', resolveKeybinding)` (bubble phase
+    // on document) would never fire — meaning Ctrl+S inside the canvas
+    // silently did nothing instead of saving the file.
     if ((e.ctrlKey || e.metaKey) && e.key === 's') {
       e.preventDefault();
-      e.stopPropagation();
     }
   }, []);
 
